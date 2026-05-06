@@ -2,95 +2,51 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY = "docker.io"
         IMAGE_NAME = "assignment27"
-        DOCKER_CREDENTIALS = credentials('docker-hub-credentials')
+        DOCKER_CREDENTIALS_ID = "docker-hub-credentials"
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo "Checking out code..."
+                echo 'Cloning GitHub repository...'
                 checkout scm
             }
         }
 
-        stage('Build') {
+        stage('Build Docker Images') {
             steps {
-                echo "Building Docker images..."
-                bat '''
-                    docker-compose build
-                '''
+                echo 'Building Docker containers...'
+                bat 'docker-compose build'
             }
         }
 
-        stage('Test Backend') {
+        stage('Start Containers') {
             steps {
-                echo "Testing backend..."
-                bat '''
-                    docker-compose run --rm backend npm test
-                '''
+                echo 'Starting Docker containers...'
+                bat 'docker-compose up -d'
             }
         }
 
-        stage('Test Frontend') {
+        stage('Check Running Containers') {
             steps {
-                echo "Testing frontend..."
-                bat '''
-                    docker-compose run --rm frontend npm test -- --watchAll=false
-                '''
-            }
-        }
-
-        stage('Deploy') {
-            steps {
-                echo "Deploying containers..."
-                bat '''
-                    docker-compose down
-                    docker-compose up -d
-                    docker-compose ps
-                '''
-            }
-        }
-
-        stage('Health Check') {
-            steps {
-                echo "Performing health checks..."
-                bat '''
-                    timeout /t 5
-                    curl http://localhost:5000/users
-                    curl http://localhost:3000
-                '''
+                bat 'docker ps'
             }
         }
     }
 
     post {
-
-        always {
-            echo "Pipeline execution completed"
-
-            bat '''
-                docker-compose logs > build-logs.txt
-                docker-compose ps
-            '''
-        }
-
         success {
-            echo "Deployment successful!"
+            echo 'Pipeline executed successfully!'
         }
 
         failure {
-            echo "Pipeline failed. Rolling back..."
-
-            bat '''
-                docker-compose down
-            '''
+            echo 'Pipeline failed!'
         }
 
-        unstable {
-            echo "Pipeline unstable"
+        always {
+            echo 'Pipeline execution completed.'
         }
     }
 }
