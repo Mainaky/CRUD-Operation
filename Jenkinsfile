@@ -8,17 +8,18 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                echo "📥 Checking out code from repository..."
+                echo "Checking out code..."
                 checkout scm
             }
         }
 
         stage('Build') {
             steps {
-                echo "🔨 Building Docker images..."
-                sh '''
+                echo "Building Docker images..."
+                bat '''
                     docker-compose build
                 '''
             }
@@ -26,27 +27,27 @@ pipeline {
 
         stage('Test Backend') {
             steps {
-                echo "✅ Testing backend..."
-                sh '''
-                    docker-compose run --rm backend npm test || true
+                echo "Testing backend..."
+                bat '''
+                    docker-compose run --rm backend npm test
                 '''
             }
         }
 
         stage('Test Frontend') {
             steps {
-                echo "✅ Testing frontend..."
-                sh '''
-                    docker-compose run --rm frontend npm test -- --watchAll=false || true
+                echo "Testing frontend..."
+                bat '''
+                    docker-compose run --rm frontend npm test -- --watchAll=false
                 '''
             }
         }
 
         stage('Deploy') {
             steps {
-                echo "🚀 Deploying containers..."
-                sh '''
-                    docker-compose down || true
+                echo "Deploying containers..."
+                bat '''
+                    docker-compose down
                     docker-compose up -d
                     docker-compose ps
                 '''
@@ -55,47 +56,41 @@ pipeline {
 
         stage('Health Check') {
             steps {
-                echo "🔍 Performing health checks..."
-                sh '''
-                    sleep 5
-                    curl -f http://localhost:5000/users || exit 1
-                    echo "✅ Backend is running"
-                    curl -f http://localhost:3000 || exit 1
-                    echo "✅ Frontend is running"
+                echo "Performing health checks..."
+                bat '''
+                    timeout /t 5
+                    curl http://localhost:5000/users
+                    curl http://localhost:3000
                 '''
             }
         }
     }
 
     post {
+
         always {
-            echo "📊 Pipeline execution completed"
-            sh '''
+            echo "Pipeline execution completed"
+
+            bat '''
                 docker-compose logs > build-logs.txt
                 docker-compose ps
             '''
         }
 
         success {
-            echo "✅ Deployment successful!"
-            sh '''
-                bash notify-discord.sh "SUCCESS" "Docker containers deployed successfully! ✅\n- Frontend: http://localhost:3000\n- Backend: http://localhost:5000"
-            '''
+            echo "Deployment successful!"
         }
 
         failure {
-            echo "❌ Pipeline failed. Rolling back..."
-            sh '''
+            echo "Pipeline failed. Rolling back..."
+
+            bat '''
                 docker-compose down
-                bash notify-discord.sh "FAILURE" "Build pipeline failed ❌\nCheck Jenkins logs for details."
             '''
         }
 
         unstable {
-            echo "⚠️ Pipeline unstable"
-            sh '''
-                bash notify-discord.sh "UNSTABLE" "Build completed with warnings ⚠️"
-            '''
+            echo "Pipeline unstable"
         }
     }
 }
