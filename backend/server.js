@@ -6,11 +6,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ✅ Docker connection
-mongoose.connect("mongodb://mongo:27017/simplecrud", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+// ✅ MongoDB connection (uses 'mongo' service name in Docker)
+mongoose.connect("mongodb://mongo:27017/simplecrud");
 
 const userSchema = new mongoose.Schema({
   name: String,
