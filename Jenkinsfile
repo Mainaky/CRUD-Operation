@@ -18,14 +18,14 @@ pipeline {
         stage('Build Docker Images') {
             steps {
                 echo 'Building Docker containers...'
-                sh 'docker-compose build'
+                sh 'docker compose build'
             }
         }
 
         stage('Start Containers') {
             steps {
                 echo 'Starting Docker containers...'
-                sh 'docker-compose up -d'
+                sh 'docker compose up -d'
             }
         }
 
